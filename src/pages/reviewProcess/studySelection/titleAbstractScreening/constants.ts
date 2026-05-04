@@ -1,0 +1,120 @@
+import type { StatusFilter, MatchStatus } from "./types";
+import { PaperSortBy } from "../../../../types/studySelection";
+
+// ============================================
+// Keyboard Shortcuts
+// ============================================
+
+export const SCREENING_SHORTCUTS = {
+  INCLUDE: "1",
+  EXCLUDE: "2",
+  NEXT_PAPER: "ArrowDown",
+  PREV_PAPER: "ArrowUp",
+} as const;
+
+// ============================================
+// Status Colors & Labels
+// ============================================
+
+export const STATUS_CONFIG = {
+  pending: {
+    label: "Pending",
+    color: "gray",
+    bg: "bg-gray-100",
+    text: "text-gray-600",
+    border: "border-gray-200",
+    dot: "bg-gray-400",
+  },
+  included: {
+    label: "Included",
+    color: "green",
+    bg: "bg-green-50",
+    text: "text-green-700",
+    border: "border-green-200",
+    dot: "bg-green-500",
+  },
+  excluded: {
+    label: "Excluded",
+    color: "red",
+    bg: "bg-red-50",
+    text: "text-red-700",
+    border: "border-red-200",
+    dot: "bg-red-500",
+  },
+  conflicted: {
+    label: "Conflicted",
+    color: "amber",
+    bg: "bg-amber-50",
+    text: "text-amber-700",
+    border: "border-amber-200",
+    dot: "bg-amber-500",
+  },
+} as const;
+
+// ============================================
+// Sort Options (maps to PaperSortBy enum for server-side sorting)
+// ============================================
+
+export const SORT_OPTIONS: { label: string; value: PaperSortBy }[] = [
+  { label: "Relevance Score", value: PaperSortBy.RelevanceDesc },
+  { label: "Title A–Z", value: PaperSortBy.TitleAsc },
+  { label: "Title Z–A", value: PaperSortBy.TitleDesc },
+  { label: "Year (Newest)", value: PaperSortBy.YearNewest },
+  { label: "Year (Oldest)", value: PaperSortBy.YearOldest },
+];
+
+// ============================================
+// Filter Options
+// ============================================
+
+export const STATUS_FILTER_OPTIONS: { label: string; value: StatusFilter }[] = [
+  { label: "All Papers", value: "all" },
+  { label: "Not Screened", value: "pending" },
+  { label: "Included", value: "included" },
+  { label: "Excluded", value: "excluded" },
+  { label: "Conflicted", value: "conflicted" },
+];
+
+// ============================================
+// Exclude Reasons
+// ============================================
+
+import { ExclusionReasonCode } from "../../../../types/studySelection";
+
+export const EXCLUDE_REASONS: { label: string; value: ExclusionReasonCode }[] = [
+  { label: "Not Relevant to Topic", value: ExclusionReasonCode.NotRelevantToTopic },
+  { label: "Not Relevant Population", value: ExclusionReasonCode.NotRelevantPopulation },
+  { label: "Not Relevant Intervention", value: ExclusionReasonCode.NotRelevantIntervention },
+  { label: "Not Empirical Study", value: ExclusionReasonCode.NotEmpiricalStudy },
+  { label: "Not Research Paper", value: ExclusionReasonCode.NotResearchPaper },
+  { label: "Outside Time Range", value: ExclusionReasonCode.OutsideTimeRange },
+  { label: "Unsupported Language", value: ExclusionReasonCode.UnsupportedLanguage },
+  { label: "Duplicate Study", value: ExclusionReasonCode.DuplicateStudy },
+  { label: "Other", value: ExclusionReasonCode.Other },
+];
+
+// ============================================
+// AI Match Status Config
+// ============================================
+
+export const MATCH_STATUS_CONFIG: Record<
+  MatchStatus,
+  { label: string; icon: string; color: string; bg: string }
+> = {
+  match: { label: "Match", icon: "check", color: "text-green-600", bg: "bg-green-50" },
+  partial_match: { label: "Partial Match", icon: "alert", color: "text-amber-600", bg: "bg-amber-50" },
+  not_match: { label: "Not Match", icon: "x", color: "text-red-600", bg: "bg-red-50" },
+  unknown: { label: "Unknown", icon: "help", color: "text-gray-500", bg: "bg-gray-50" },
+} as const;
+
+// ============================================
+// PICOC Labels
+// ============================================
+
+export const PICOC_LABELS: Record<string, string> = {
+  population: "Population",
+  intervention: "Intervention",
+  comparison: "Comparison",
+  outcome: "Outcome",
+  context: "Context",
+} as const;

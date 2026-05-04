@@ -1,0 +1,52 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependencies
+node_modules/
+
+# Production build
+dist/
+dist-ssr/
+
+# Vite cache
+.vite/
+.vite-ssr/
+
+# Local env
+.env
+.env.*.local
+
+# Editor files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.code-workspace
+
+# System
+.DS_Store
+Thumbs.db
+
+# Optional - nếu dùng testing
+coverage/
+*.tsbuildinfo
+
+# Optional - Yarn / PNPM / Bun
+.pnpm-store
+.yarn/*
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+.cache/
+bun.lockb

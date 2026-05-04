@@ -1,0 +1,455 @@
+Perfect! I've completed a comprehensive exploration of your codebase. Here's a detailed report on all the items you requested:
+
+## 📋 **Comprehensive Codebase Report**
+
+### **1. Routing Patterns**
+
+**Route Structure** ([src/routes/MainRoutes.tsx](src/routes/MainRoutes.tsx)):
+- `/projects/:projectId/processes/:processId` → `ReviewProcessWorkspace`
+- `/projects/:projectId/processes/:processId/identification/:identificationPhaseId` → `IdentificationPhaseWorkspace`
+- `/projects/:projectId/processes/:processId/prisma-report` → `PrismaReportWorkspace`
+
+**Pattern for Study Selection** (already prepared in code):
+- `/projects/:projectId/processes/:processId/screening/:studySelectionProcessId` (referenced in [useReviewProcessWorkspace.ts](src/hooks/useReviewProcessWorkspace.ts#L83))
+
+---
+
+### **2. Type Definitions (All Files)**
+
+**Type files in `src/types/`:**
+- [auth.ts](src/types/auth.ts)
+- [coreAndGovernance.ts](src/types/coreAndGovernance.ts)
+- [http.ts](src/types/http.ts)
+- [identification.ts](src/types/identification.ts)
+- [notification.ts](src/types/notification.ts)
+- [paper.ts](src/types/paper.ts)
+- [prismaReport.ts](src/types/prismaReport.ts)
+- [project.ts](src/types/project.ts)
+- [reviewProcess.ts](src/types/reviewProcess.ts)
+- [reviewProcessWorkspace.ts](src/types/reviewProcessWorkspace.ts)
+- [searchExecution.ts](src/types/searchExecution.ts)
+
+**Key Type Definitions for Study Selection:**
+
+From [reviewProcess.ts](src/types/reviewProcess.ts):
+```typescript
+export interface StudySelectionProcess {
+  id: string;
+  reviewProcessId: string;
+  notes: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  status: number;
+  statusText: "Pending" | "InProgress" | "Completed" | "Cancelled";
+  createdAt: string;
+  modifiedAt: string;
+}
+```
+
+From [coreAndGovernance.ts](src/types/coreAndGovernance.ts):
+```typescript
+export interface StudySelectionCriteria {
+  /* inclusion/exclusion criteria */
+}
+
+export interface StudySelectionProcedure {
+  /* screening procedures */
+}
+```
+
+From [reviewProcessWorkspace.ts](src/types/reviewProcessWorkspace.ts):
+```typescript
+screening: {
+  totalPapers: number;
+  included: number;
+  excluded: number;
+  conflictCount: number;
+  pendingCount: number;
+}
+```
+
+From [paper.ts](src/types/paper.ts):
+```typescript
+export interface PaperResponse {
+  id: string;
+  title: string;
+  authors?: string | null;
+  abstract?: string | null;
+  doi?: string | null;
+  publicationType?: string | null;
+  publicationYear?: string | null;
+  // ... 20+ fields for paper metadata
+  
+  // Selection Status (derived dynamically - NOT stored on paper)
+  selectionStatus?: string | null;
+  selectionStatusText?: string | null;
+}
+```
+
+**⚠️ Critical:** `selectionStatus` lives in `ScreeningResolution` entity (backend), NOT on the paper itself.
+
+---
+
+### **3. Review Process Components**
+
+**All files in `src/components/reviewProcess/`:**
+- ActivityTimeline.tsx
+- AlertsCard.tsx
+- ContextPanel.tsx
+- CreateProcessModal.tsx
+- PhaseProgressStepper.tsx
+- PhaseStatsGrid.tsx
+- PhaseSummaryCard.tsx
+- ProcessHeader.tsx
+- ProcessProgress.tsx
+- ProgressOverviewCard.tsx
+- ReviewProcessCard.tsx
+- TeamMembersCard.tsx
+- UpdateNotesModal.tsx
+
+**Component Pattern Example** ([PhaseProgressStepper.tsx](src/components/reviewProcess/PhaseProgressStepper.tsx)):
+```typescript
+interface PhaseProgressStepperProps {
+  currentPhase: number;
+  completedPhases: number[];
+  onPhaseClick?: (phaseIndex: number) => void;
+  onPhaseOpen?: (phaseName: string) => void;
+  showOpenAction?: boolean;
+}
+```
+
+Phases array (hardcoded):
+```typescript
+const PHASES = [
+  { id: 0, name: "Identification", key: "identification" },
+  { id: 1, name: "Study Selection", key: "screening" },  // ← Your phase!
+  { id: 2, name: "Quality Assessment", key: "quality" },
+  { id: 3, name: "Data Extraction", key: "extraction" },
+  { id: 4, name: "Synthesis", key: "synthesis" },
+  { id: 5, name: "PRISMA Report", key: "prisma" },
+];
+```
+
+---
+
+### **4. Hook Design Patterns**
+
+**[useReviewProcessWorkspace.ts](src/hooks/useReviewProcessWorkspace.ts) Pattern:**
+```typescript
+export const useReviewProcessWorkspace = ({
+  projectId,
+  processId,
+}: UseReviewProcessWorkspaceParams): UseReviewProcessWorkspaceReturn => {
+  // React Query for data fetching
+  const { process, isLoading, error } = useReviewProcess(processId);
+  
+  // Mutations for actions
+  const { startReviewProcess, completeReviewProcess } = useReviewProcessMutations();
+  
+  // Navigation - key pattern for screening:
+  if (phaseName === "screening" && process.studySelectionProcess?.id) {
+    navigate(
+      `/projects/${projectId}/processes/${processId}/screening/${process.studySelectionProcess.id}`
+    );
+  }
+};
+```
+
+**[useUniquePapers.ts](src/hooks/useUniquePapers.ts) Pattern:**
+```typescript
+export const useUniquePapers = ({
+  identificationProcessId,
+  pageSize = 20,
+  autoFetch = true,
+}: UseUniquePapersOptions) => {
+  // Local filter state
+  const [search, setSearchState] = useState("");
+  const [year, setYearState] = useState<number | undefined>();
+  const [pageNumber, setPageNumberState] = useState(1);
+
+  // React Query with query key
+  const query = useQuery({
+    queryKey: QUERY_KEYS.identification.uniquePapers(identificationProcessId, filters),
+    queryFn: () => paperService.getUniquePapers({ ... }),
+  });
+
+  // Pagination + filter actions
+  return {
+    papers,
+    totalCount,
+    pageNumber,
+    hasNextPage,
+    setSearch,
+    setYear,
+    nextPage,
+    previousPage,
+    refetch,
+  };
+};
+```
+
+**Key patterns:**
+- ✅ React Query for data fetching
+- ✅ Custom hooks extract ALL logic from components
+- ✅ Filter state is **local** in hook, drives query key
+- ✅ Actions use `useCallback` for stability
+- ✅ Pagination built into hook
+
+---
+
+### **5. Service API Patterns**
+
+**[paperService.ts](src/services/paperService.ts):**
+```typescript
+export const paperService = {
+  async getUniquePapers(params: GetUniquePapersParams): Promise<GetUniquePapersResponse> {
+    const queryParams = new URLSearchParams();
+    if (params.search) queryParams.set("search", params.search);
+    if (params.year) queryParams.set("year", params.year.toString());
+    if (params.pageNumber) queryParams.set("pageNumber", params.pageNumber.toString());
+    
+    const url = `/identification-processes/${params.identificationProcessId}/unique-papers${queryString}`;
+    const response = await api.get<GetUniquePapersResponse>(url);
+    return response.data;
+  },
+};
+```
+
+**[deduplicationService.ts](src/services/deduplicationService.ts):**
+```typescript
+export const deduplicationService = {
+  async getDuplicatePairs(params: GetDuplicatePairsParams): Promise<GetDuplicatePairsResponse> {
+    // Similar pattern - builds query params, calls API
+  },
+
+  async resolveDuplicatePair(
+    identificationProcessId: string,
+    pairId: string,
+    request: ResolveDuplicatePairRequest
+  ): Promise<ResolveDuplicatePairResponse> {
+    const url = `/identification-processes/${identificationProcessId}/duplicate-pairs/${pairId}/resolve`;
+    const response = await api.patch<ResolveDuplicatePairResponse>(url, request);
+    return response.data;
+  },
+};
+```
+
+**Pattern:**
+- ✅ All services use configured `axios` instance
+- ✅ Query params built with `URLSearchParams`
+- ✅ Full type safety with generics
+- ✅ Async/await throughout
+
+---
+
+### **6. UI Components Available**
+
+**All files in `src/components/ui/`:**
+
+| Component | Usage |
+|-----------|-------|
+| Button.tsx | Primary, secondary, danger, success, outline, ghost variants |
+| Card.tsx | Container component |
+| Drawer.tsx | Side panel (e.g., paper details) |
+| Dropdown.tsx | Dropdown menu |
+| FormField.tsx | Wrapper for form inputs |
+| FormSelect.tsx | Select with form integration |
+| FormTextarea.tsx | Textarea with form integration |
+| HelperText.tsx | Form field hint text |
+| Input.tsx | Text input |
+| Label.tsx | Form label |
+| LoadingSpinner.tsx | Circular spinner |
+| Modal.tsx | Modal dialog |
+| SectionLoading.tsx | Loading state for sections |
+| Select.tsx | Standalone select |
+| Sidebar.tsx | Sidebar layout |
+| Table.tsx | Data table component |
+| Textarea.tsx | Standalone textarea |
+| Tooltip.tsx | Tooltip component |
+| toast/ | Toast notification system |
+
+**Button example** ([Button.tsx](src/components/ui/Button.tsx)):
+```typescript
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  isLoading?: boolean;
+  variant?: "primary" | "secondary" | "danger" | "success" | "outline" | "ghost";
+  size?: "sm" | "md" | "lg";
+}
+```
+
+---
+
+### **7. Phase Configuration**
+
+[**src/constants/phaseConfig.ts**](src/constants/phaseConfig.ts):
+```typescript
+export const PHASE_ICONS = {
+  identification: FiDatabase,
+  screening: FiFilter,        // ← Your phase icon
+  extraction: FiFileText,
+  quality: FiCheckSquare,
+  synthesis: FiLayers,
+  prisma: FiClipboard,
+};
+
+export const PHASE_NAMES = {
+  identification: "Identification",
+  screening: "Study Selection",  // ← Display name!
+  extraction: "Data Extraction",
+  quality: "Quality Assessment",
+  synthesis: "Synthesis",
+  prisma: "PRISMA Report",
+};
+
+export type PhaseName = keyof typeof PHASE_NAMES;
+```
+
+---
+
+### **8. ReviewProcessWorkspace Pattern**
+
+[**src/pages/reviewProcess/ReviewProcessWorkspace.tsx**](src/pages/reviewProcess/ReviewProcessWorkspace.tsx):
+```typescript
+export default function ReviewProcessWorkspace() {
+  const { projectId, processId } = useParams<{ projectId: string; processId: string }>();
+  
+  const {
+    process,
+    isLoading,
+    error,
+    phaseStats,
+    activities,
+    teamMembers,
+    alerts,
+    progressStats,
+    handleOpenPhase,
+  } = useReviewProcessWorkspace({ projectId, processId });
+
+  // Simple orchestrator - logic in hook
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <ProcessHeader ... />
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Phase Progress */}
+        <PhaseProgressStepper onPhaseOpen={handleOpenPhase} ... />
+        
+        {/* Activity + Context */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <ActivityTimeline ... />
+          <ContextPanel ... />
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+**Pattern:**
+- ✅ Slim orchestrator (120 lines)
+- ✅ All logic → hook
+- ✅ All UI → components
+- ✅ Loading + error states first
+- ✅ Grid layout for responsive design
+
+---
+
+### **9. Identification Phase as a Template**
+
+[**src/pages/reviewProcess/identification/IdentificationPhaseWorkspace.tsx**](src/pages/reviewProcess/identification/IdentificationPhaseWorkspace.tsx):
+
+Directory structure:
+```
+src/pages/reviewProcess/identification/
+├── IdentificationPhaseWorkspace.tsx    (Slim orchestrator)
+├── hooks/
+│   └── useIdentificationWorkspace.ts   (300+ lines of logic)
+├── sections/
+│   ├── IdentificationHeader.tsx
+│   ├── PrismaSummaryCards.tsx
+│   ├── TabNavigation.tsx
+│   ├── StrategiesTabContent.tsx
+│   ├── DeduplicationTabContent.tsx
+│   ├── PapersLibraryTabContent.tsx
+│   └── ...
+├── types.ts
+├── constants.ts
+└── utils.ts
+```
+
+**This is the direct template** for `StudySelectionWorkspace`!
+
+---
+
+### **10. Existing Study Selection Code**
+
+**Directory exists but EMPTY:**
+```
+src/pages/reviewProcess/studySelection/
+├── components/              (empty)
+└── hooks/                   (empty)
+```
+
+**Existing infrastructure:**
+- ✅ Route prepared: `/projects/:projectId/processes/:processId/screening/:screeningProcessId`
+- ✅ `StudySelectionProcess` type already defined
+- ✅ `screeningService` pattern references found in docs
+- ✅ Phase name in config: "Study Selection" (phase key = "screening")
+- ✅ PRISMA statistics system tracks screening exclusions
+
+---
+
+### **11. Pages in reviewProcess Directory**
+
+```
+src/pages/reviewProcess/
+├── ReviewProcessWorkspace.tsx          (Root workspace)
+├── identification/                     (✅ Full implementation)
+│   ├── IdentificationPhaseWorkspace.tsx
+│   ├── hooks/
+│   ├── sections/
+│   └── ... (30+ files)
+├── prismaReport/                       (✅ Read-only report)
+│   ├── PrismaReportWorkspace.tsx
+│   └── sections/
+└── studySelection/                     (🚀 READY FOR YOUR IMPL)
+    ├── components/                     (empty)
+    └── hooks/                          (empty)
+```
+
+---
+
+### **12. Screening Resolution Architecture** 
+
+**Key Finding:** Paper screening status is NOT stored on papers directly.
+
+From docs and code:
+```
+Paper entity: title, authors, abstract, doi, year, ...
+                ↓ (references)
+ImportBatch: papers grouped by import
+                ↓
+IdentificationProcess: deduplication → unique papers
+                ↓
+StudySelectionProcess: papers → ScreeningResolution
+                ↓
+ScreeningResolution: { paperId, decision: "included"|"excluded", stage, notes }
+```
+
+This means:
+- Papers are **immutable** after import
+- Screening decisions are **separate entities**
+- You'll need a hook like `useScreeningResolutions()` to fetch decisions
+- Papers in library tab show current selection status dynamically via lookup
+
+---
+
+## 🎯 **Key Takeaways for Study Selection Workspace**
+
+1. **Use Identification as template** - Same structure, same patterns
+2. **Create `useStudySelectionWorkspace` hook** - Housing all screening logic
+3. **Create `sections/` folder** - ScreeningLibrary, ScreeningDecisionPanel, ScreeningStats, etc.
+4. **Prepare screening service** - Methods to fetch papers, submit decisions, update ScreeningResolutions
+5. **Route pattern ready** - Already in hooks, just implement the destination
+6. **Types ready** - `StudySelectionProcess`, `PaperResponse`, with selection status lookup
+
+**Your implementation will follow this proven pattern** from Identification Phase with ~300 lines in hook, ~50-100 lines per section component, and slim 120-line orchestrator.
