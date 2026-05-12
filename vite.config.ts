@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+// API: https://srss-api.duckdns.org/api
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
