@@ -6,7 +6,7 @@ import { updateAccessToken } from "../redux/slices/authSlice";
 // import { isTokenExpired } from "../utils/auth";
 import { authService } from "../services/authService";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://srss-api.duckdns.org/api";
 const TIMEOUT = 1000000;
 
 const api = axios.create({
